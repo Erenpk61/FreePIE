@@ -115,25 +115,25 @@ namespace FreePIE.Core.Plugins
             set { holder.controller.ControllerState.RightTrigger = (byte)value; }
         }
 
-        public int leftX
+        public int leftStickX
         {
             get { return holder.controller.ControllerState.ThumbLX; }
             set { holder.controller.ControllerState.ThumbLX = (short)value; }
         }
 
-        public int leftY
+        public int leftStickY
         {
             get { return holder.controller.ControllerState.ThumbLY; }
             set { holder.controller.ControllerState.ThumbLY = (short)value; }
         }
 
-        public int rightX
+        public int rightStickX
         {
             get { return holder.controller.ControllerState.ThumbRX; }
             set { holder.controller.ControllerState.ThumbRX = (short)value; }
         }
 
-        public int rightY
+        public int rightStickY
         {
             get { return holder.controller.ControllerState.ThumbRY; }
             set { holder.controller.ControllerState.ThumbRY = (short)value; }
