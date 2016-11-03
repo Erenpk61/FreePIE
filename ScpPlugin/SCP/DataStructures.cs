@@ -31,17 +31,6 @@ namespace SCP
         Y = 0x8000
     }
 
-    [GlobalEnum]
-    public enum AxisMap : int
-    {
-        ThumbLX,
-        ThumbLY,
-        ThumbRX,
-        ThumbRY,
-        LeftTrigger,
-        RightTrigger
-    }
-
     [StructLayout(LayoutKind.Sequential, Size = 0x10)]
     internal unsafe struct ControlBuffer
     {
@@ -64,7 +53,7 @@ namespace SCP
         public uint ControllerIndex;
         byte someFlagThatdoesSeemToMatter,
             someFlagThatdoesntSeemToMatter;
-        ushort buttons;
+        ScpButtonMask buttons;
 
         public byte LeftTrigger, RightTrigger;
 
@@ -78,9 +67,9 @@ namespace SCP
             set
             {
                 if (value)
-                    buttons |= (ushort)button;
+                    buttons |= button;
                 else
-                    buttons &= (ushort)~((ushort)button);
+                    buttons &= ~button;
             }
         }
         public ScpStatusReport(uint controllerIndex)
