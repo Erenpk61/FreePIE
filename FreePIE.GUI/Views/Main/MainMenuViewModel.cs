@@ -15,16 +15,18 @@ using FreePIE.GUI.Shells.Curves;
 using FreePIE.GUI.Views.Plugin;
 using FreePIE.GUI.Views.Script;
 using IEventAggregator = FreePIE.Core.Common.Events.IEventAggregator;
+using Microsoft.Win32;
 
 namespace FreePIE.GUI.Views.Main
 {
-    public class MainMenuViewModel : PropertyChangedBase, 
-        Core.Common.Events.IHandle<ScriptUpdatedEvent>, 
-        Core.Common.Events.IHandle<ExitingEvent>, 
+    public class MainMenuViewModel : PropertyChangedBase,
+        Core.Common.Events.IHandle<ScriptUpdatedEvent>,
+        Core.Common.Events.IHandle<ExitingEvent>,
         Core.Common.Events.IHandle<ActiveScriptDocumentChangedEvent>,
         Core.Common.Events.IHandle<ScriptErrorEvent>,
         Core.Common.Events.IHandle<FileEvent>,
-        Core.Common.Events.IHandle<RunEvent>
+        Core.Common.Events.IHandle<RunEvent>,
+        Core.Common.Events.IHandle<PowerModeEvent>
     {
         private readonly IResultFactory resultFactory;
         private readonly IEventAggregator eventAggregator;
@@ -33,9 +35,9 @@ namespace FreePIE.GUI.Views.Main
         private readonly IFileSystem fileSystem;
         private readonly ScriptDialogStrategy scriptDialogStrategy;
         private IScriptEngine currentScriptEngine;
-        private bool scriptRunning;
+        private bool scriptRunning, scriptStoppedBySuspend;
 
-        public MainMenuViewModel(IResultFactory resultFactory, 
+        public MainMenuViewModel(IResultFactory resultFactory,
             IEventAggregator eventAggregator,
             Func<IScriptEngine> scriptEngineFactory,
             Func<ScriptEditorViewModel> scriptEditorFactory,
@@ -43,21 +45,24 @@ namespace FreePIE.GUI.Views.Main
             ScriptDialogStrategy scriptDialogStrategy)
         {
             eventAggregator.Subscribe(this);
-           
+
             this.resultFactory = resultFactory;
             this.eventAggregator = eventAggregator;
             this.scriptEngineFactory = scriptEngineFactory;
             this.scriptEditorFactory = scriptEditorFactory;
             this.fileSystem = fileSystem;
             this.scriptDialogStrategy = scriptDialogStrategy;
+
+            SystemEvents.PowerModeChanged += (s, e) =>
+                eventAggregator.Publish(new PowerModeEvent(e));
         }
 
         private PanelViewModel activeDocument;
         private PanelViewModel ActiveDocument
         {
             get { return activeDocument; }
-            set { 
-                activeDocument = value; 
+            set {
+                activeDocument = value;
                 NotifyOfPropertyChange(() => CanQuickSaveScript);
                 NotifyOfPropertyChange(() => CanSaveScript);
                 NotifyOfPropertyChange(() => CanRunScript);
@@ -79,7 +84,7 @@ namespace FreePIE.GUI.Views.Main
             var document = scriptEditorFactory()
                 .Configure(filePath);
 
-            if (!string.IsNullOrEmpty(filePath))
+            if(!string.IsNullOrEmpty(filePath))
                 document.LoadFileContent(fileSystem.ReadAllText(filePath));
 
             eventAggregator.Publish(new ScriptDocumentAddedEvent(document));
@@ -109,7 +114,7 @@ namespace FreePIE.GUI.Views.Main
 
         public IEnumerable<IResult> QuickSaveScript()
         {
-            if (PathSet)
+            if(PathSet)
             {
                 Save(activeDocument);
                 return null;
@@ -145,6 +150,7 @@ namespace FreePIE.GUI.Views.Main
         public void StopScript()
         {
             scriptRunning = false;
+            scriptStoppedBySuspend = false;
             currentScriptEngine.Stop();
             PublishScriptStateChange();
         }
@@ -193,6 +199,28 @@ namespace FreePIE.GUI.Views.Main
                 StopScript();
         }
 
+        public void Handle(PowerModeEvent message)
+        {
+            switch(message.Mode)
+            {
+                case PowerModes.Suspend:
+                    if(scriptRunning)
+                    {
+                        StopScript();
+                        scriptStoppedBySuspend = true;
+                    }
+                    break;
+                case PowerModes.Resume:
+                    if(scriptStoppedBySuspend)
+                    {
+                        scriptStoppedBySuspend = false;
+                        if(CanRunScript)
+                            RunScript();
+                    }
+                    break;
+            }
+        }
+
         public void Handle(ActiveScriptDocumentChangedEvent message)
         {
             ActiveDocument = message.Document;
@@ -200,7 +228,7 @@ namespace FreePIE.GUI.Views.Main
 
         public void Handle(ScriptErrorEvent message)
         {
-            if (message.Level == ErrorLevel.Exception)
+            if(message.Level == ErrorLevel.Exception)
             {
                 scriptRunning = false;
                 PublishScriptStateChange();
