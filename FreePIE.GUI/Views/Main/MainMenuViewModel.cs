@@ -1,9 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 using Caliburn.Micro;
 using FreePIE.Core.Common;
-using FreePIE.Core.Common.Extensions;
 using FreePIE.Core.Model.Events;
 using FreePIE.Core.ScriptEngine;
 using FreePIE.GUI.Common.Strategies;
@@ -84,7 +82,7 @@ namespace FreePIE.GUI.Views.Main
             var document = scriptEditorFactory()
                 .Configure(filePath);
 
-            if(!string.IsNullOrEmpty(filePath))
+            if (!string.IsNullOrEmpty(filePath))
                 document.LoadFileContent(fileSystem.ReadAllText(filePath));
 
             eventAggregator.Publish(new ScriptDocumentAddedEvent(document));
@@ -114,7 +112,7 @@ namespace FreePIE.GUI.Views.Main
 
         public IEnumerable<IResult> QuickSaveScript()
         {
-            if(PathSet)
+            if (PathSet)
             {
                 Save(activeDocument);
                 return null;
@@ -184,7 +182,7 @@ namespace FreePIE.GUI.Views.Main
 
         public void Handle(RunEvent message)
         {
-            if(CanRunScript)
+            if (CanRunScript)
                 RunScript();
         }
 
@@ -195,26 +193,26 @@ namespace FreePIE.GUI.Views.Main
 
         public void Handle(ExitingEvent message)
         {
-            if(scriptRunning)
+            if (scriptRunning)
                 StopScript();
         }
 
         public void Handle(PowerModeEvent message)
         {
-            switch(message.Mode)
+            switch (message.Mode)
             {
                 case PowerModes.Suspend:
-                    if(scriptRunning)
+                    if (scriptRunning)
                     {
                         StopScript();
                         scriptStoppedBySuspend = true;
                     }
                     break;
                 case PowerModes.Resume:
-                    if(scriptStoppedBySuspend)
+                    if (scriptStoppedBySuspend)
                     {
                         scriptStoppedBySuspend = false;
-                        if(CanRunScript)
+                        if (CanRunScript)
                             RunScript();
                     }
                     break;
@@ -228,7 +226,7 @@ namespace FreePIE.GUI.Views.Main
 
         public void Handle(ScriptErrorEvent message)
         {
-            if(message.Level == ErrorLevel.Exception)
+            if (message.Level == ErrorLevel.Exception)
             {
                 scriptRunning = false;
                 PublishScriptStateChange();
